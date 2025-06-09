@@ -15,6 +15,9 @@ export default function TerminalPortfolio() {
   const [copied, setCopied] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const terminalRef = useRef<HTMLDivElement>(null)
+  const [currentDirectory, setCurrentDirectory] = useState("/home/aman")
+  const [commandHistoryList, setCommandHistoryList] = useState<string[]>([])
+  const [startTime] = useState(new Date())
 
   const commands = {
     help: "Show available commands",
@@ -29,6 +32,23 @@ export default function TerminalPortfolio() {
     whoami: "Display current user info",
     ls: "List available sections",
     cat: "Read file contents (e.g., cat resume.txt)",
+    pwd: "Print working directory",
+    cd: "Change directory (e.g., cd projects)",
+    history: "Show command history",
+    date: "Display current date and time",
+    uptime: "Show system uptime",
+    tree: "Display directory tree structure",
+    grep: "Search for text (e.g., grep 'React' skills)",
+    echo: "Display text (e.g., echo 'Hello World')",
+    man: "Show manual for commands (e.g., man ls)",
+    ps: "Show running processes",
+    top: "Display system information",
+    ping: "Test network connectivity",
+    curl: "Fetch data from URL",
+    git: "Git commands (status, log, branch)",
+    npm: "NPM commands (list, info)",
+    sudo: "Execute with elevated privileges",
+    exit: "Exit terminal (refresh page)",
   }
 
   const typeWriter = (text: string, callback?: () => void) => {
@@ -48,14 +68,24 @@ export default function TerminalPortfolio() {
 
   const executeCommand = (cmd: string) => {
     const command = cmd.toLowerCase().trim()
-    setCommandHistory((prev) => [...prev, `$ ${cmd}`])
+    const args = command.split(" ")
+    const baseCommand = args[0]
 
-    switch (command) {
+    setCommandHistory((prev) => [...prev, `$ ${cmd}`])
+    setCommandHistoryList((prev) => [...prev, cmd])
+
+    switch (baseCommand) {
       case "help":
         setCommandHistory((prev) => [
           ...prev,
           "Available commands:",
-          ...Object.entries(commands).map(([cmd, desc]) => `  ${cmd.padEnd(12)} - ${desc}`),
+          ...Object.entries(commands).map(([cmd, desc]) => `  ${cmd.padEnd(15)} - ${desc}`),
+          "",
+          "Examples:",
+          "  cat resume.txt    - View resume",
+          "  cd projects       - Navigate to projects",
+          "  grep 'React'      - Search for React",
+          "  echo 'Hello'      - Display text",
         ])
         break
       case "about":
@@ -84,21 +114,243 @@ export default function TerminalPortfolio() {
         setCommandHistory([])
         setCurrentSection("welcome")
         break
+      case "pwd":
+        setCommandHistory((prev) => [...prev, currentDirectory])
+        break
+      case "cd":
+        const targetDir = args[1]
+        if (!targetDir) {
+          setCurrentDirectory("/home/aman")
+          setCommandHistory((prev) => [...prev, "Changed to home directory"])
+        } else if (["projects", "skills", "experience", "education", "achievements", "contact"].includes(targetDir)) {
+          setCurrentDirectory(`/home/aman/${targetDir}`)
+          setCurrentSection(targetDir)
+          setCommandHistory((prev) => [...prev, `Changed directory to ${targetDir}`])
+        } else {
+          setCommandHistory((prev) => [...prev, `cd: ${targetDir}: No such directory`])
+        }
+        break
       case "ls":
+        if (currentDirectory === "/home/aman") {
+          setCommandHistory((prev) => [
+            ...prev,
+            "drwxr-xr-x  2 aman aman 4096 Nov 28 23:34 about/",
+            "drwxr-xr-x  2 aman aman 4096 Nov 28 23:34 education/",
+            "drwxr-xr-x  2 aman aman 4096 Nov 28 23:34 skills/",
+            "drwxr-xr-x  2 aman aman 4096 Nov 28 23:34 experience/",
+            "drwxr-xr-x  2 aman aman 4096 Nov 28 23:34 projects/",
+            "drwxr-xr-x  2 aman aman 4096 Nov 28 23:34 achievements/",
+            "-rw-r--r--  1 aman aman 2048 Nov 28 23:34 resume.txt",
+            "-rw-r--r--  1 aman aman 1024 Nov 28 23:34 contact.txt",
+          ])
+        } else {
+          const dirName = currentDirectory.split("/").pop()
+          setCommandHistory((prev) => [...prev, `Contents of ${dirName}/ directory - use 'cd ..' to go back`])
+        }
+        break
+      case "history":
         setCommandHistory((prev) => [
           ...prev,
-          "drwxr-xr-x  2 aman aman 4096 Nov 28 23:34 about/",
-          "drwxr-xr-x  2 aman aman 4096 Nov 28 23:34 education/",
-          "drwxr-xr-x  2 aman aman 4096 Nov 28 23:34 skills/",
-          "drwxr-xr-x  2 aman aman 4096 Nov 28 23:34 experience/",
-          "drwxr-xr-x  2 aman aman 4096 Nov 28 23:34 projects/",
-          "drwxr-xr-x  2 aman aman 4096 Nov 28 23:34 achievements/",
-          "-rw-r--r--  1 aman aman 2048 Nov 28 23:34 resume.txt",
-          "-rw-r--r--  1 aman aman 1024 Nov 28 23:34 contact.txt",
+          "Command History:",
+          ...commandHistoryList.map((cmd, index) => `  ${(index + 1).toString().padStart(3)} ${cmd}`),
         ])
         break
-      case "cat resume.txt":
-        setCurrentSection("resume")
+      case "date":
+        setCommandHistory((prev) => [...prev, new Date().toString()])
+        break
+      case "uptime":
+        const uptime = Math.floor((new Date().getTime() - startTime.getTime()) / 1000)
+        const minutes = Math.floor(uptime / 60)
+        const seconds = uptime % 60
+        setCommandHistory((prev) => [...prev, `System uptime: ${minutes}m ${seconds}s`])
+        break
+      case "tree":
+        setCommandHistory((prev) => [
+          ...prev,
+          "/home/aman",
+          "├── about/",
+          "├── education/",
+          "├── skills/",
+          "│   ├── languages/",
+          "│   ├── frameworks/",
+          "│   └── tools/",
+          "├── experience/",
+          "├── projects/",
+          "│   ├── streamit/",
+          "│   ├── chatapp/",
+          "│   └── project-generator/",
+          "├── achievements/",
+          "├── resume.txt",
+          "└── contact.txt",
+        ])
+        break
+      case "grep":
+        const searchTerm = args.slice(1).join(" ").replace(/['"]/g, "")
+        if (!searchTerm) {
+          setCommandHistory((prev) => [...prev, "Usage: grep 'search_term'"])
+        } else {
+          const results = [
+            "Searching for: " + searchTerm,
+            "Found in skills: React, Node.js, JavaScript",
+            "Found in projects: StreamIt uses React and TypeScript",
+            "Found in experience: React & Node.js development",
+          ].filter((line) => line.toLowerCase().includes(searchTerm.toLowerCase()))
+          setCommandHistory((prev) => [...prev, ...results])
+        }
+        break
+      case "echo":
+        const text = args.slice(1).join(" ")
+        setCommandHistory((prev) => [...prev, text || ""])
+        break
+      case "man":
+        const manCommand = args[1]
+        if (!manCommand) {
+          setCommandHistory((prev) => [...prev, "Usage: man <command>"])
+        } else if (commands[manCommand as keyof typeof commands]) {
+          setCommandHistory((prev) => [
+            ...prev,
+            `Manual page for ${manCommand}:`,
+            `NAME: ${manCommand}`,
+            `DESCRIPTION: ${commands[manCommand as keyof typeof commands]}`,
+            `USAGE: ${manCommand} [options]`,
+          ])
+        } else {
+          setCommandHistory((prev) => [...prev, `No manual entry for ${manCommand}`])
+        }
+        break
+      case "ps":
+        setCommandHistory((prev) => [
+          ...prev,
+          "PID  COMMAND",
+          "1    portfolio-app",
+          "2    react-renderer",
+          "3    terminal-emulator",
+          "4    skill-manager",
+          "5    project-showcase",
+        ])
+        break
+      case "top":
+        setCommandHistory((prev) => [
+          ...prev,
+          "System Information:",
+          "CPU Usage: 12%",
+          "Memory: 256MB / 1GB",
+          "Processes: 5 running",
+          "Load Average: 0.8",
+          "Terminal Sessions: 1 active",
+        ])
+        break
+      case "ping":
+        const host = args[1] || "github.com"
+        setCommandHistory((prev) => [
+          ...prev,
+          `PING ${host}:`,
+          `64 bytes from ${host}: icmp_seq=1 time=23.4ms`,
+          `64 bytes from ${host}: icmp_seq=2 time=21.8ms`,
+          `64 bytes from ${host}: icmp_seq=3 time=24.1ms`,
+          "--- ping statistics ---",
+          "3 packets transmitted, 3 received, 0% packet loss",
+        ])
+        break
+      case "curl":
+        const url = args[1]
+        if (!url) {
+          setCommandHistory((prev) => [...prev, "Usage: curl <url>"])
+        } else {
+          setCommandHistory((prev) => [
+            ...prev,
+            `Fetching ${url}...`,
+            "HTTP/1.1 200 OK",
+            "Content-Type: application/json",
+            '{"status": "success", "message": "Portfolio API active"}',
+          ])
+        }
+        break
+      case "git":
+        const gitCommand = args[1]
+        switch (gitCommand) {
+          case "status":
+            setCommandHistory((prev) => [
+              ...prev,
+              "On branch main",
+              "Your branch is up to date with 'origin/main'",
+              "nothing to commit, working tree clean",
+            ])
+            break
+          case "log":
+            setCommandHistory((prev) => [
+              ...prev,
+              "commit a1b2c3d (HEAD -> main)",
+              "Author: Aman Jaiswal <amanjaiswal7236@gmail.com>",
+              "Date: Thu Nov 28 23:34:56 2024",
+              "",
+              "    Add terminal portfolio with enhanced features",
+            ])
+            break
+          case "branch":
+            setCommandHistory((prev) => [...prev, "* main", "  feature/terminal-ui", "  develop"])
+            break
+          default:
+            setCommandHistory((prev) => [...prev, "Usage: git [status|log|branch]"])
+        }
+        break
+      case "npm":
+        const npmCommand = args[1]
+        switch (npmCommand) {
+          case "list":
+            setCommandHistory((prev) => [
+              ...prev,
+              "portfolio@1.0.0",
+              "├── react@18.2.0",
+              "├── next@14.0.0",
+              "├── typescript@5.0.0",
+              "└── tailwindcss@3.3.0",
+            ])
+            break
+          case "info":
+            setCommandHistory((prev) => [
+              ...prev,
+              "portfolio@1.0.0",
+              "description: Interactive terminal portfolio",
+              "author: Aman Jaiswal",
+              "license: MIT",
+            ])
+            break
+          default:
+            setCommandHistory((prev) => [...prev, "Usage: npm [list|info]"])
+        }
+        break
+      case "sudo":
+        const sudoCommand = args.slice(1).join(" ")
+        if (!sudoCommand) {
+          setCommandHistory((prev) => [...prev, "Usage: sudo <command>"])
+        } else {
+          setCommandHistory((prev) => [
+            ...prev,
+            "[sudo] password for aman: ",
+            `Executing with elevated privileges: ${sudoCommand}`,
+            "Command executed successfully!",
+          ])
+        }
+        break
+      case "exit":
+        setCommandHistory((prev) => [
+          ...prev,
+          "Goodbye! Thanks for visiting my portfolio.",
+          "Refreshing page in 3 seconds...",
+        ])
+        setTimeout(() => {
+          window.location.reload()
+        }, 3000)
+        break
+      case "cat":
+        if (args[1] === "resume.txt") {
+          setCurrentSection("resume")
+        } else if (args[1] === "contact.txt") {
+          setCurrentSection("contact")
+        } else {
+          setCommandHistory((prev) => [...prev, `cat: ${args[1] || "filename"}: No such file`])
+        }
         break
       default:
         setCommandHistory((prev) => [...prev, `Command not found: ${cmd}. Type 'help' for available commands.`])
@@ -135,7 +387,7 @@ export default function TerminalPortfolio() {
       case "welcome":
         return (
           <div className="space-y-4">
-            <pre className="text-green-400 text-sm">
+            <pre className="text-green-400 text-[8px] xs:text-[10px] sm:text-xs md:text-sm overflow-x-auto">
               {`
  █████╗ ███╗   ███╗ █████╗ ███╗   ██╗
 ██╔══██╗████╗ ████║██╔══██╗████╗  ██║
@@ -146,9 +398,9 @@ export default function TerminalPortfolio() {
 `}
             </pre>
             <div className="text-amber-400">
-              <p>Welcome to Aman Jaiswal's Terminal Portfolio</p>
-              <p>Full Stack Developer & Problem Solver</p>
-              <p className="mt-2 text-gray-400">Type 'help' to see available commands</p>
+              <p className="text-sm sm:text-base">Welcome to Aman Jaiswal's Terminal Portfolio</p>
+              <p className="text-sm sm:text-base">Full Stack Developer & Problem Solver</p>
+              <p className="mt-2 text-gray-400 text-xs sm:text-sm">Type 'help' to see available commands</p>
             </div>
           </div>
         )
@@ -186,42 +438,42 @@ export default function TerminalPortfolio() {
       case "skills":
         return (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="border border-yellow-500 p-4 rounded">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+              <div className="border border-yellow-500 p-2 sm:p-4 rounded">
                 <p className="text-yellow-400 font-bold mb-2">💻 Languages</p>
                 <div className="flex flex-wrap gap-1">
                   {["C/C++", "Python", "JavaScript", "TypeScript", "HTML/CSS"].map((skill) => (
-                    <Badge key={skill} variant="outline" className="border-yellow-500 text-yellow-400">
+                    <Badge key={skill} variant="outline" className="border-yellow-500 text-yellow-400 text-xs">
                       {skill}
                     </Badge>
                   ))}
                 </div>
               </div>
-              <div className="border border-purple-500 p-4 rounded">
+              <div className="border border-purple-500 p-2 sm:p-4 rounded">
                 <p className="text-purple-400 font-bold mb-2">🛠️ Frameworks</p>
                 <div className="flex flex-wrap gap-1">
                   {["React", "Node.js", "Express.js", "Next.js", "Tailwind"].map((skill) => (
-                    <Badge key={skill} variant="outline" className="border-purple-500 text-purple-400">
+                    <Badge key={skill} variant="outline" className="border-purple-500 text-purple-400 text-xs">
                       {skill}
                     </Badge>
                   ))}
                 </div>
               </div>
-              <div className="border border-cyan-500 p-4 rounded">
+              <div className="border border-cyan-500 p-2 sm:p-4 rounded">
                 <p className="text-cyan-400 font-bold mb-2">🗄️ Databases</p>
                 <div className="flex flex-wrap gap-1">
                   {["MySQL", "MongoDB"].map((skill) => (
-                    <Badge key={skill} variant="outline" className="border-cyan-500 text-cyan-400">
+                    <Badge key={skill} variant="outline" className="border-cyan-500 text-cyan-400 text-xs">
                       {skill}
                     </Badge>
                   ))}
                 </div>
               </div>
-              <div className="border border-red-500 p-4 rounded">
+              <div className="border border-red-500 p-2 sm:p-4 rounded">
                 <p className="text-red-400 font-bold mb-2">⚙️ Tools</p>
                 <div className="flex flex-wrap gap-1">
                   {["Git/GitHub", "VS Code", "Postman"].map((skill) => (
-                    <Badge key={skill} variant="outline" className="border-red-500 text-red-400">
+                    <Badge key={skill} variant="outline" className="border-red-500 text-red-400 text-xs">
                       {skill}
                     </Badge>
                   ))}
@@ -259,46 +511,54 @@ export default function TerminalPortfolio() {
       case "projects":
         return (
           <div className="space-y-4">
-            <div className="border border-blue-500 p-4 rounded">
-              <div className="flex justify-between items-start mb-2">
+            <div className="border border-blue-500 p-2 sm:p-4 rounded">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
                 <p className="text-blue-400 font-bold">🎥 StreamIt</p>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" className="border-blue-500 text-blue-400 h-6 text-xs">
-                    <Github className="h-3 w-3 mr-1" />
+                <div className="flex gap-1 sm:gap-2">
+                  <Button size="sm" variant="outline" className="border-blue-500 text-blue-400 h-5 sm:h-6 text-xs px-2">
+                    <Github className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
                     Code
                   </Button>
-                  <Button size="sm" variant="outline" className="border-blue-500 text-blue-400 h-6 text-xs">
-                    <ExternalLink className="h-3 w-3 mr-1" />
+                  <Button size="sm" variant="outline" className="border-blue-500 text-blue-400 h-5 sm:h-6 text-xs px-2">
+                    <ExternalLink className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
                     Live
                   </Button>
                 </div>
               </div>
-              <p className="text-white text-sm mb-2">Live streaming platform with real-time capabilities</p>
+              <p className="text-white text-xs sm:text-sm mb-2">Live streaming platform with real-time capabilities</p>
               <p className="text-green-400 text-xs">Next.js • TypeScript • MySQL • Prisma • LiveKit</p>
               <p className="text-gray-400 text-xs mt-1">50% faster data retrieval • 1M+ viewers • 4K support</p>
             </div>
 
-            <div className="border border-purple-500 p-4 rounded">
-              <div className="flex justify-between items-start mb-2">
+            <div className="border border-purple-500 p-2 sm:p-4 rounded">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
                 <p className="text-purple-400 font-bold">💬 ChatApp</p>
-                <Button size="sm" variant="outline" className="border-purple-500 text-purple-400 h-6 text-xs">
-                  <Github className="h-3 w-3 mr-1" />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-purple-500 text-purple-400 h-5 sm:h-6 text-xs px-2 self-start"
+                >
+                  <Github className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
                   Code
                 </Button>
               </div>
-              <p className="text-white text-sm mb-2">Real-time messaging with WebSocket communication</p>
+              <p className="text-white text-xs sm:text-sm mb-2">Real-time messaging with WebSocket communication</p>
               <p className="text-green-400 text-xs">React • Socket.io • Node.js • Express • Redux</p>
             </div>
 
-            <div className="border border-yellow-500 p-4 rounded">
-              <div className="flex justify-between items-start mb-2">
+            <div className="border border-yellow-500 p-2 sm:p-4 rounded">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
                 <p className="text-yellow-400 font-bold">⚡ Project Generator</p>
-                <Button size="sm" variant="outline" className="border-yellow-500 text-yellow-400 h-6 text-xs">
-                  <Github className="h-3 w-3 mr-1" />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-yellow-500 text-yellow-400 h-5 sm:h-6 text-xs px-2 self-start"
+                >
+                  <Github className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
                   Code
                 </Button>
               </div>
-              <p className="text-white text-sm mb-2">CLI tool for generating starter projects</p>
+              <p className="text-white text-xs sm:text-sm mb-2">CLI tool for generating starter projects</p>
               <p className="text-green-400 text-xs">Node.js • NPM • JavaScript</p>
             </div>
           </div>
@@ -411,66 +671,69 @@ ACHIEVEMENTS
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
-      <div className="container mx-auto p-4 max-w-6xl">
+      <div className="container mx-auto p-2 sm:p-4 max-w-4xl">
         {/* Terminal Header */}
-        <div className="bg-gray-800 rounded-t-lg p-2 flex items-center gap-2">
-          <div className="flex gap-2">
-            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-            <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+        <div className="bg-gray-800 rounded-t-lg p-2 sm:p-3 flex items-center gap-2">
+          <div className="flex gap-1 sm:gap-2">
+            <div className="w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full"></div>
+            <div className="w-2 h-2 sm:w-3 sm:h-3 bg-yellow-500 rounded-full"></div>
+            <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full"></div>
           </div>
-          <div className="flex items-center gap-2 ml-4">
-            <Terminal className="h-4 w-4" />
-            <span className="text-gray-300 text-sm">aman@portfolio:~$</span>
+          <div className="flex items-center gap-2 ml-2 sm:ml-4">
+            <Terminal className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="text-gray-300 text-xs sm:text-sm">aman@portfolio:~$</span>
           </div>
         </div>
 
         {/* Terminal Content */}
-        <div ref={terminalRef} className="bg-black rounded-b-lg p-4 h-[80vh] overflow-y-auto border border-gray-700">
+        <div
+          ref={terminalRef}
+          className="bg-black rounded-b-lg p-2 sm:p-4 h-[70vh] sm:h-[75vh] lg:h-[80vh] overflow-y-auto border border-gray-700"
+        >
           {/* Command History */}
           <div className="space-y-1 mb-4">
             {commandHistory.map((line, index) => (
-              <div key={index} className="text-gray-300">
+              <div key={index} className="text-gray-300 text-xs sm:text-sm break-words">
                 {line}
               </div>
             ))}
           </div>
 
           {/* Current Section Content */}
-          {renderSection()}
+          <div className="text-xs sm:text-sm">{renderSection()}</div>
 
           {/* Command Input */}
-          <div className="flex items-center gap-2 mt-4">
-            <span className="text-green-400">aman@portfolio:~$</span>
+          <div className="flex items-center gap-1 sm:gap-2 mt-4">
+            <span className="text-green-400 text-xs sm:text-sm shrink-0">
+              aman@portfolio:{currentDirectory.replace("/home/aman", "~")}$
+            </span>
             <input
               ref={inputRef}
               type="text"
               value={currentCommand}
               onChange={(e) => setCurrentCommand(e.target.value)}
               onKeyPress={handleKeyPress}
-              className="bg-transparent border-none outline-none text-white flex-1"
+              className="bg-transparent border-none outline-none text-white flex-1 text-xs sm:text-sm min-w-0"
               placeholder="Type a command..."
               disabled={isTyping}
             />
-            {isTyping && <span className="animate-pulse">|</span>}
+            {isTyping && <span className="animate-pulse text-xs sm:text-sm">|</span>}
           </div>
         </div>
 
         {/* Quick Commands */}
-        <div className="mt-4 flex flex-wrap gap-2">
-          {Object.keys(commands)
-            .slice(0, 8)
-            .map((cmd) => (
-              <Button
-                key={cmd}
-                size="sm"
-                variant="outline"
-                onClick={() => executeCommand(cmd)}
-                className="border-green-500 text-green-400 hover:bg-green-500 hover:text-black"
-              >
-                {cmd}
-              </Button>
-            ))}
+        <div className="mt-2 sm:mt-4 flex flex-wrap gap-1 sm:gap-2">
+          {["help", "about", "skills", "projects", "contact", "ls", "history", "clear"].map((cmd) => (
+            <Button
+              key={cmd}
+              size="sm"
+              variant="outline"
+              onClick={() => executeCommand(cmd)}
+              className="border-green-500 text-green-400 hover:bg-green-500 hover:text-black text-xs sm:text-sm h-6 sm:h-8 px-2 sm:px-3"
+            >
+              {cmd}
+            </Button>
+          ))}
         </div>
       </div>
     </div>
